@@ -1,0 +1,219 @@
+Test Case 1: Retrieve Player Name
+ Feature: Retrieve Player Name
+  Scenario: Successfully retrieve player's name
+    Given the player's name is already set in the system
+    When I send a GET request to "/playerName"
+    Then the response status code should be 200 Ok
+    And the response body should contain
+      | status | success |
+      | data   | foo     |
+
+
+Test Case 2: Set Player Name with Valid Input
+ Feature: Set Player Name
+  Scenario: Successfully set a valid player name
+    Given the API server is running
+    And the client is authenticated using the following ‘admin’, ‘snakeeyes’
+    When I send a PUT request to "/playerName" with JSON
+      | name | player1 |
+    Then the response status code should be 204
+
+
+Test Case 3: Set Player Name with Invalid Input
+ Feature: Set Player Name
+  Scenario: Attempt to set an invalid player name
+    Given the API server is running
+    And the client is authenticated using the following ‘admin’, ‘snakeeyes’
+    When I send a PUT request to "/playerName" with JSON
+      | name | "" |
+    Then the response status code should be 400
+    And the response body should contain
+      | status | data                              |
+      | failed   | This is why your request failed |
+
+
+Test Case 4: Set Player Name without Authorization
+Feature: Set Player Name
+  Scenario: Attempt to set player name without authorization
+    Given the API server is running
+    And no authorization headers are provided
+    When I send a PUT request to "/playerName" with JSON
+      | name | player1 |
+    Then the response status code should be 401
+    And the response body should contain
+      | status | failed                         |
+      | data   | This is why your request failed|
+
+
+Test Case 5: Retrieve Die Value with Valid ID
+Feature: Retrieve Die Value
+  Scenario: Successfully retrieve die value with valid ID
+    Given the API server is running
+    When I send a GET request to "/die/1"
+    Then the response status code should be 200
+    And the response body should contain
+      | status | success                |
+      | data   | { "id": 1, "value": 4} |
+
+
+Test Case 6: Retrieve Die Value with Invalid ID
+Feature: Retrieve Die Value
+  Scenario: Attempt to retrieve die value with an invalid ID
+    Given the API server is running
+    When I send a GET request to "/die/12"
+    Then the response status code should be 400
+    And the response body should contain
+      | status | failed                         |
+      | data   | This is why your request failed|
+
+
+Test Case 7: Retrieve Die Value in Different Representations
+Feature: Retrieve Die Value in Various Representations
+  Scenario Outline: Retrieve die value in <format> representation
+    Given a valid die ID exists in the system
+    And the API server is running
+    When I send a GET request to "/die/1" with Accept header "<accept_header>"
+    Then the response status code should be 200
+    And the response body should contain
+      | value | <expected_value> |
+    Examples:
+      | format   | accept_header                          | expected_value                 |
+      | integer  | application/vnd.yahtzee.int+json       | 4                              |
+      | float    | application/vnd.yahtzee.float+json     | 4.0                            |
+      | word     | application/vnd.yahtzee.word+json      | four                           |
+      | dots     | application/vnd.yahtzee.dots+json      | ....                           |
+
+
+Test Case 8: Set Die Value with Valid Input
+Feature: Set Die Value
+  Scenario: Successfully set a die value with a valid ID and value
+Given the API server is running
+    When I send a GET request to "/die/1"
+    Then the response status code should be 200
+    And the response body should contain
+      | status | success               |
+      | data   | { "id": 1, "value": 6 |
+//Retrieve the original value first then change the value to 5 with the below PUT request
+//Starting another request
+    Given the API server is running
+And the client is authenticated using the following ‘admin’, ‘snakeeyes’
+    And the client is authenticated
+    When I send a PUT request to "/die" with JSON
+      | id    | 1 |
+      | value | 5 |
+    Then the response status code should be 204
+
+
+Test Case 9: Set Die Value with Invalid Input
+Feature: Set Die Value
+  Scenario: Attempt to set a die value with an invalid ID or value
+Given the API server is running
+    And the client is authenticated
+    When I send a GET request to "/die/1"
+    Then the response status code should be 200
+    And the response body should contain
+      | status | success               |
+      | data   | { "id": 1, "value": 5} |
+##Attemp to change existing die value from 4 to 10 after retrieving the original value
+//Starting another request
+    Given the API server is running
+And the client is authenticated using the following ‘admin’, ‘snakeeyes’
+    And the client is authenticated
+    When I send a PUT request to "/die" with JSON
+      | id    | 1       |
+      | value | 10      |
+    Then the response status code should be 400
+    And the response body should contain
+      | status | failed                         |
+      | data   | This is why your request failed|
+
+
+Test Case 10: Set Die Value without Authorization
+Feature: Set Die Value
+  Scenario: Attempt to set a die value without authentication
+Given the API server is running
+    When I send a GET request to "/die/1"
+    Then the response status code should be 200
+    And the response body should contain
+      | status | success                |
+      | data   | { "id": 1, "value": 5 }|
+## After retrieving value, attempt to set a new die value without been authorised
+//Starting another request
+    Given the API server is running
+    And no authorization headers are provided
+    When I send a PUT request to "/die" with JSON
+      | id    | 1 |
+      | value | 5 |
+    Then the response status code should be 401
+    And the response body should contain
+      | status | failed                         |
+      | data   | This is why your request failed|
+
+
+Test Case 11: Roll Individual Die with Valid ID
+Feature: Roll Individual Die
+  Scenario: Successfully roll a die with a valid ID
+    Given the API server is running
+    When I send a POST request to "/rollDie/1"
+    Then the response status code should be 200
+    And the response body should contain
+      | status | success                 |
+      | data   | { "id": 1, "value": 6 } |
+
+
+Test Case 12: Roll Individual Die with Invalid ID
+Feature: Roll Individual Die
+  Scenario: Attempt to roll a die with an invalid ID
+    Given the API server is running
+    When I send a POST request to "/rollDie/0"
+    Then the response status code should be 400
+    And the response body should contain
+      | status | failed                          |
+      | data   | This is why your request failed |
+
+
+Test Case 13: Retrieve All Dice Values
+Feature: Retrieve All Dice Values
+  Scenario: Successfully retrieve values for all dice
+    Given the API server is running
+    When I send a GET request to "/dice"
+    Then the response status code should be 200
+    And the response body should contain
+      | status | success                  |
+      | data   | array of all dice values |
+//All dice values e.g 2,3,4,5,6
+
+
+Test Case 14: Roll All Dice
+Feature: Roll All Dice
+  Scenario: Successfully roll all dice to get new values
+    Given the API server is running
+    When I send a POST request to "/rollDice"
+    Then the response status code should be 200
+    And the response body should contain
+      | status | success                  |
+      | data   | array of new dice values |
+
+
+Test Case 15: Check Yahtzee Condition - All Dice Match
+Feature: Yahtzee Condition Check
+  Scenario: Verify Yahtzee condition when all dice match
+    Given all dice are set to the same value
+    When I send a GET request to "/isYahtzee"
+    Then the response status code should be 200
+    And the response body should contain
+      | status | success |
+      | data   | true    |
+
+
+Test Case 16: Check Yahtzee Condition - Non-Matching Dice
+Feature: Yahtzee Condition Check
+  Scenario: Verify Yahtzee condition when dice values differ
+    Given dice values are not the same
+    When I send a GET request to "/isYahtzee"
+    Then the response status code should be 200
+    And the response body should contain
+      | status | success |
+      | data   | false |
+
+    
